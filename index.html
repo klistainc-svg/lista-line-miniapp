@@ -21,6 +21,10 @@ await liff.init({
 });
 const params = new URLSearchParams(window.location.search);
 const type = params.get('type');
+
+document.getElementById('message').innerText =
+  'type=' + type + '\nURL=' + window.location.href;
+        return;
 if (!liff.isLoggedIn()) {
           liff.login();
           return;
