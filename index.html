@@ -52,9 +52,9 @@
           document.getElementById('message').innerText =
             'LINE連携を確認しました。';
         } else {
-          document.getElementById('message').innerText =
-            'LINE連携に失敗しました。';
-        }
+  document.getElementById('message').innerText =
+    'LINE連携に失敗しました：' + (result.error || '詳細不明');
+}
 
       } catch (error) {
         document.getElementById('message').innerText =
