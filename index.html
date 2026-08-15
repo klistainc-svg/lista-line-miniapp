@@ -48,17 +48,21 @@
 
         const result = await response.json();
 
-        if (result.success) {
+        if (!result.success || !result.lineUserId) {
           document.getElementById('message').innerText =
-            'LINE連携を確認しました。';
-        } else {
-  document.getElementById('message').innerText =
-    'LINE連携に失敗しました：' + (result.error || '詳細不明');
-}
+            'LINE連携に失敗しました。';
+          return;
+        }
+
+        const formUrl =
+          'https://docs.google.com/forms/d/e/1FAIpQLSdhaBkAskqvZcl_ZwJ5qRw2eOUt7HZmYAhkPYB82vqKNfwcAg/viewform?usp=pp_url&entry.1853739278=' +
+          encodeURIComponent(result.lineUserId);
+
+        window.location.href = formUrl;
 
       } catch (error) {
         document.getElementById('message').innerText =
-          'エラー：' + (error.code || '') + ' ' + (error.message || error);
+          'エラー：' + (error.message || error);
       }
     }
 
