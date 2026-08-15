@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista 住まい相談</title>
+
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+
+<body>
+  <div id="message">
+    Lista 住宅メーカー診断を準備しています...
+  </div>
+
+  <script>
+    async function startApp() {
+      try {
+        await liff.init({
+          liffId: '2011116569-vZZzguJe'
+        });
+
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+
+        const decoded = liff.getDecodedIDToken();
+
+        if (!decoded || !decoded.sub) {
+          document.getElementById('message').innerText =
+            'LINEユーザー情報を取得できませんでした。';
+          return;
+        }
+
+        const lineUserId = decoded.sub;
+
+        document.getElementById('message').innerText =
+          'LINE連携を確認しました。';
+
+      } catch (error) {
+        document.getElementById('message').innerText =
+          'エラー：' + (error.code || '') + ' ' + (error.message || error);
+      }
+    }
+
+    startApp();
+  </script>
+</body>
+</html>
