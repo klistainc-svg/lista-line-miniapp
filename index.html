@@ -19,8 +19,6 @@
 await liff.init({
   liffId: '2011116571-MIJ3JTGp'
 });
-const params = new URLSearchParams(window.location.search);
-const type = params.get('type');
 
 const params = new URLSearchParams(window.location.search);
 const type = params.get('type');
@@ -29,10 +27,6 @@ if (!liff.isLoggedIn()) {
   liff.login();
   return;
 }
-if (!liff.isLoggedIn()) {
-          liff.login();
-          return;
-        }
 
         const idToken = liff.getIDToken();
 
