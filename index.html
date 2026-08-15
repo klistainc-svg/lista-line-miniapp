@@ -16,10 +16,11 @@
   <script>
     async function startApp() {
       try {
-        await liff.init({
-liffId: '2011116571-MIJ3JTGp'
+await liff.init({
+  liffId: '2011116571-MIJ3JTGp'
+});
 
-        if (!liff.isLoggedIn()) {
+if (!liff.isLoggedIn()) {
           liff.login();
           return;
         }
