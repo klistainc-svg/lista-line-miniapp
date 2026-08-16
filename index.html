@@ -2,13 +2,20 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
   <title>Lista 住まい相談</title>
 
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script
+    src="https://static.line-scdn.net/liff/edge/2/sdk.js">
+  </script>
 </head>
 
 <body>
+
   <div id="message">
     Lista 住宅メーカー診断を準備しています...
   </div>
@@ -16,74 +23,172 @@
   <script>
     async function startApp() {
       try {
-await liff.init({
-  liffId: '2011116571-MIJ3JTGp'
-});
 
-const params = new URLSearchParams(window.location.search);
-const type = params.get('type');
+        // ==========================================
+        // LIFF初期化
+        // ==========================================
+        await liff.init({
+          liffId: '2011116571-MIJ3JTGp'
+        });
 
-if (!liff.isLoggedIn()) {
-  liff.login();
-  return;
-}
+        const params =
+          new URLSearchParams(
+            window.location.search
+          );
 
-        const idToken = liff.getIDToken();
+        const type =
+          params.get('type');
+
+
+        // ==========================================
+        // LINEログイン
+        // ==========================================
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+
+
+        // ==========================================
+        // IDトークン取得
+        // ==========================================
+        const idToken =
+          liff.getIDToken();
 
         if (!idToken) {
-          document.getElementById('message').innerText =
-            'LINE認証情報を取得できませんでした。';
+          document
+            .getElementById('message')
+            .innerText =
+              'LINE認証情報を取得できませんでした。';
+
           return;
         }
 
-        const response = await fetch(
-          'https://script.google.com/macros/s/AKfycbwCabSaORi7UCrhi7BtMD0a_rX_mFlLl0F7MrCC7broEI_G5PgoT4ieRrfFJHaAoZkUxQ/exec',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'text/plain;charset=utf-8'
-            },
-            body: JSON.stringify({
-              idToken: idToken
-            })
-          }
-        );
 
-        const result = await response.json();
+        // ==========================================
+        // LINEプロフィール取得
+        // ==========================================
+        let displayName = '';
 
-        if (!result.success || !result.lineUserId) {
-          document.getElementById('message').innerText =
-            'LINE連携に失敗しました。';
+        try {
+          const profile =
+            await liff.getProfile();
+
+          displayName =
+            profile.displayName || '';
+
+        } catch (profileError) {
+          console.log(
+            'LINE表示名取得エラー',
+            profileError
+          );
+        }
+
+
+        // ==========================================
+        // Apps Scriptへ認証情報を送信
+        // ==========================================
+        const response =
+          await fetch(
+            'https://script.google.com/macros/s/AKfycbwCabSaORi7UCrhi7BtMD0a_rX_mFlLl0F7MrCC7broEI_G5PgoT4ieRrfFJHaAoZkUxQ/exec',
+            {
+              method: 'POST',
+
+              headers: {
+                'Content-Type':
+                  'text/plain;charset=utf-8'
+              },
+
+              body: JSON.stringify({
+                idToken: idToken,
+                displayName: displayName
+              })
+            }
+          );
+
+
+        const result =
+          await response.json();
+
+
+        // ==========================================
+        // LINE連携確認
+        // ==========================================
+        if (
+          !result.success ||
+          !result.lineUserId
+        ) {
+          document
+            .getElementById('message')
+            .innerText =
+              'LINE連携に失敗しました。';
+
           return;
         }
 
-let formUrl;
 
-if (type === 'sale') {
-  formUrl =
-    'https://docs.google.com/forms/d/e/1FAIpQLScTeG513euAXpLBC5anzAGrYnor_eXynllyy9e47G-wEe4Cfw/viewform?usp=pp_url&entry.765095553=' +
-    encodeURIComponent(result.lineUserId);
+        // ==========================================
+        // GoogleフォームURL
+        // ==========================================
+        let formUrl;
 
-} else if (type === 'property') {
-  formUrl =
-    'https://docs.google.com/forms/d/e/1FAIpQLScmwZhI2qH7f-ZgxPb0a7g7gZuVE9C6Uu7YJhXTXt7R0P_m3Q/viewform?usp=pp_url&entry.553742939=' +
-    encodeURIComponent(result.lineUserId);
 
-} else {
-  formUrl =
-    'https://docs.google.com/forms/d/e/1FAIpQLSdhaBkAskqvZcl_ZwJ5qRw2eOUt7HZmYAhkPYB82vqKNfwcAg/viewform?usp=pp_url&entry.1853739278=' +
-    encodeURIComponent(result.lineUserId);
-}
+        // 売却相談
+        if (type === 'sale') {
 
-window.location.href = formUrl;
+          formUrl =
+            'https://docs.google.com/forms/d/e/1FAIpQLScTeG513euAXpLBC5anzAGrYnor_eXynllyy9e47G-wEe4Cfw/viewform?usp=pp_url&entry.765095553=' +
+            encodeURIComponent(
+              result.lineUserId
+            );
+
+
+        // 物件相談
+        } else if (
+          type === 'property'
+        ) {
+
+          formUrl =
+            'https://docs.google.com/forms/d/e/1FAIpQLScmwZhI2qH7f-ZgxPb0a7g7gZuVE9C6Uu7YJhXTXt7R0P_m3Q/viewform?usp=pp_url&entry.553742939=' +
+            encodeURIComponent(
+              result.lineUserId
+            );
+
+
+        // 住宅メーカー診断
+        } else {
+
+          formUrl =
+            'https://docs.google.com/forms/d/e/1FAIpQLSdhaBkAskqvZcl_ZwJ5qRw2eOUt7HZmYAhkPYB82vqKNfwcAg/viewform?usp=pp_url&entry.1853739278=' +
+            encodeURIComponent(
+              result.lineUserId
+            );
+        }
+
+
+        // ==========================================
+        // Googleフォームへ移動
+        // ==========================================
+        window.location.href =
+          formUrl;
+
 
       } catch (error) {
-        document.getElementById('message').innerText =
-          'エラー：' + (error.message || error);
+
+        document
+          .getElementById('message')
+          .innerText =
+            'エラー：' +
+            (
+              error.message ||
+              error
+            );
       }
     }
 
+
     startApp();
   </script>
+
 </body>
 </html>
