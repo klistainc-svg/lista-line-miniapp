@@ -2,222 +2,173 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lista 住まい相談</title>
-
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
-  <style>
-    body {
-      margin: 0;
-      padding: 40px 20px;
-      font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        "Noto Sans JP",
-        sans-serif;
-      background: #ffffff;
-      color: #222222;
-      text-align: center;
-    }
-
-    #message {
-      margin-top: 30px;
-      font-size: 16px;
-      line-height: 1.8;
-    }
-  </style>
 </head>
 
 <body>
-
-  <div id="message">
+  <div id="message" style="text-align:center;margin-top:60px;font-family:sans-serif;">
     Lista 住まい相談を準備しています...
   </div>
 
-  <script>
-    const LIFF_ID =
-      '2011116571-MIJ3JTGp';
+<script>
+const LIFF_ID = '2011116571-MIJ3JTGp';
+
+const FORMS = {
+  maker: {
+    message: 'Lista 住宅メーカー診断を準備しています...',
+    url: 'https://docs.google.com/forms/d/e/1FAIpQLSdhaBkAskqvZcl_ZwJ5qRw2eOUt7HZmYAhkPYB82vqKNfwcAg/viewform',
+    entry: 'entry.1853739278'
+  },
+
+  sale: {
+    message: 'Lista 不動産売却相談を準備しています...',
+    url: 'https://docs.google.com/forms/d/e/1FAIpQLScTeG513euAXpLBC5anzAGrYnor_eXynllyy9e47G-wEe4Cfw/viewform',
+    entry: 'entry.720146338'
+  },
+
+  property: {
+    message: 'Lista 土地・物件探し相談を準備しています...',
+    url: 'https://docs.google.com/forms/d/e/1FAIpQLScmwZhI2qH7f-ZgxPb0a7g7gZuVE9C6Uu7YJhXTXt7R0P_m3Q/viewform',
+    entry: 'entry.997299105'
+  },
+
+  vacant: {
+    message: 'Lista 相続・空き家相談を準備しています...',
+    url: 'https://docs.google.com/forms/d/e/1FAIpQLSfRFDVYvMNVFPUP9BTzhhpx5_qlw0ZHTBzbdOIrkdpiaGcXAw/viewform',
+    entry: 'entry.2125231539'
+  }
+};
 
 
-    const FORM_CONFIG = {
-
-      maker: {
-        message:
-          'Lista 住宅メーカー診断を準備しています...',
-
-        url:
-          'https://docs.google.com/forms/d/e/1FAIpQLSdhaBkAskqvZcl_ZwJ5qRw2eOUt7HZmYAhkPYB82vqKNfwcAg/viewform',
-
-        entry:
-          'entry.1853739278'
-      },
+function validType(value) {
+  return ['maker', 'sale', 'property', 'vacant'].includes(value)
+    ? value
+    : '';
+}
 
 
-      sale: {
-        message:
-          'Lista 不動産売却相談を準備しています...',
+function readTypeFromUrl() {
+  const params = new URLSearchParams(window.location.search);
 
-        url:
-          'https://docs.google.com/forms/d/e/1FAIpQLScTeG513euAXpLBC5anzAGrYnor_eXynllyy9e47G-wEe4Cfw/viewform',
+  const directType = validType(params.get('type'));
+  if (directType) return directType;
 
-        entry:
-          'entry.720146338'
-      },
+  const state = params.get('liff.state');
 
+  if (state) {
+    try {
+      let decoded = state;
 
-      property: {
-        message:
-          'Lista 土地・物件探し相談を準備しています...',
-
-        url:
-          'https://docs.google.com/forms/d/e/1FAIpQLScmwZhI2qH7f-ZgxPb0a7g7gZuVE9C6Uu7YJhXTXt7R0P_m3Q/viewform',
-
-        entry:
-          'entry.997299105'
-      },
-
-
-      vacant: {
-        message:
-          'Lista 相続・空き家相談を準備しています...',
-
-        url:
-          'https://docs.google.com/forms/d/e/1FAIpQLSfRFDVYvMNVFPUP9BTzhhpx5_qlw0ZHTBzbdOIrkdpiaGcXAw/viewform',
-
-        entry:
-          'entry.2125231539'
+      for (let i = 0; i < 3; i++) {
+        decoded = decodeURIComponent(decoded);
       }
-    };
+
+      const question = decoded.indexOf('?');
+
+      const query =
+        question >= 0
+          ? decoded.substring(question + 1)
+          : decoded.replace(/^[/?#]+/, '');
+
+      const stateParams = new URLSearchParams(query);
+
+      const stateType = validType(stateParams.get('type'));
+
+      if (stateType) return stateType;
+
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  return '';
+}
 
 
-    async function startApp() {
+async function start() {
+  const message = document.getElementById('message');
 
-      const messageElement =
-        document.getElementById(
-          'message'
-        );
+  try {
 
+    // LINEの1次リダイレクト時にも相談種別を保持
+    const initialType = readTypeFromUrl();
 
-      try {
-
-        // ------------------------------------------
-        // 相談種別取得
-        // ------------------------------------------
-        const params =
-          new URLSearchParams(
-            window.location.search
-          );
-
-        const type =
-          params.get(
-            'type'
-          );
-
-
-        const config =
-          FORM_CONFIG[type];
-
-
-        if (!config) {
-
-          messageElement.innerText =
-            'リンク情報を確認できませんでした。';
-
-          return;
-        }
-
-
-        messageElement.innerText =
-          config.message;
-
-
-        // ------------------------------------------
-        // LIFF初期化
-        // ------------------------------------------
-        await liff.init({
-          liffId:
-            LIFF_ID
-        });
-
-
-        // ------------------------------------------
-        // 未ログインならLINEログイン
-        // ------------------------------------------
-        if (!liff.isLoggedIn()) {
-
-          liff.login({
-            redirectUri:
-              window.location.href
-          });
-
-          return;
-        }
-
-
-        // ------------------------------------------
-        // LINEプロフィールからuserId取得
-        // Apps Scriptは経由しない
-        // ------------------------------------------
-        const profile =
-          await liff.getProfile();
-
-
-        const lineUserId =
-          String(
-            profile.userId || ''
-          ).trim();
-
-
-        if (!lineUserId) {
-
-          messageElement.innerText =
-            'LINEユーザー情報を取得できませんでした。';
-
-          return;
-        }
-
-
-        // ------------------------------------------
-        // GoogleフォームURL生成
-        // ------------------------------------------
-        const formUrl =
-          config.url +
-          '?usp=pp_url&' +
-          config.entry +
-          '=' +
-          encodeURIComponent(
-            lineUserId
-          );
-
-
-        // ------------------------------------------
-        // Googleフォームへ即時転送
-        // ------------------------------------------
-        window.location.replace(
-          formUrl
-        );
-
-
-      } catch (error) {
-
-        console.error(
-          error
-        );
-
-        messageElement.innerText =
-          'フォームを開けませんでした。画面を閉じて、もう一度お試しください。';
-      }
+    if (initialType) {
+      sessionStorage.setItem('lista_consultation_type', initialType);
     }
 
 
-    startApp();
-  </script>
+    // LIFF初期化
+    await liff.init({
+      liffId: LIFF_ID
+    });
+
+
+    // LINEログイン
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+
+
+    // LIFF初期化後のURLを優先
+    const restoredType = readTypeFromUrl();
+
+    const storedType = validType(
+      sessionStorage.getItem('lista_consultation_type')
+    );
+
+    const type = restoredType || storedType;
+
+    if (!type || !FORMS[type]) {
+      message.innerText = 'リンク情報を確認できませんでした。';
+      return;
+    }
+
+
+    const config = FORMS[type];
+
+    message.innerText = config.message;
+
+
+    // LINEユーザーID取得
+    const profile = await liff.getProfile();
+
+    const lineUserId = String(profile.userId || '').trim();
+
+    if (!lineUserId) {
+      message.innerText = 'LINEユーザー情報を取得できませんでした。';
+      return;
+    }
+
+
+    // GoogleフォームへLINEユーザーID付きで転送
+    const formUrl =
+      config.url +
+      '?usp=pp_url&' +
+      config.entry +
+      '=' +
+      encodeURIComponent(lineUserId);
+
+
+    sessionStorage.removeItem('lista_consultation_type');
+
+    window.location.replace(formUrl);
+
+
+  } catch (error) {
+    console.error(error);
+
+    message.innerText =
+      'フォームを開けませんでした。画面を閉じて、もう一度お試しください。';
+  }
+}
+
+
+start();
+</script>
 
 </body>
 </html>
