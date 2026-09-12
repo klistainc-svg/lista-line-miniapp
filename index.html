@@ -2,6 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
@@ -17,7 +18,7 @@
 <body>
 
   <div id="message">
-    Lista 住宅メーカー診断を準備しています...
+    Lista 住まい相談を準備しています...
   </div>
 
   <script>
@@ -25,12 +26,8 @@
       try {
 
         // ==========================================
-        // LIFF初期化
+        // URLパラメータ取得
         // ==========================================
-        await liff.init({
-          liffId: '2011116571-MIJ3JTGp'
-        });
-
         const params =
           new URLSearchParams(
             window.location.search
@@ -41,10 +38,52 @@
 
 
         // ==========================================
+        // 表示メッセージ切り替え
+        // ==========================================
+        const messageElement =
+          document.getElementById(
+            'message'
+          );
+
+        if (type === 'sale') {
+
+          messageElement.innerText =
+            'Lista 不動産売却相談を準備しています...';
+
+        } else if (
+          type === 'property'
+        ) {
+
+          messageElement.innerText =
+            'Lista 土地・物件探し相談を準備しています...';
+
+        } else {
+
+          messageElement.innerText =
+            'Lista 住宅メーカー診断を準備しています...';
+        }
+
+
+        // ==========================================
+        // LIFF初期化
+        // ==========================================
+        await liff.init({
+          liffId:
+            '2011116571-MIJ3JTGp'
+        });
+
+
+        // ==========================================
         // LINEログイン
+        // 初回ログイン後も type=sale 等を保持
         // ==========================================
         if (!liff.isLoggedIn()) {
-          liff.login();
+
+          liff.login({
+            redirectUri:
+              window.location.href
+          });
+
           return;
         }
 
@@ -56,10 +95,9 @@
           liff.getIDToken();
 
         if (!idToken) {
-          document
-            .getElementById('message')
-            .innerText =
-              'LINE認証情報を取得できませんでした。';
+
+          messageElement.innerText =
+            'LINE認証情報を取得できませんでした。';
 
           return;
         }
@@ -71,6 +109,7 @@
         let displayName = '';
 
         try {
+
           const profile =
             await liff.getProfile();
 
@@ -78,6 +117,7 @@
             profile.displayName || '';
 
         } catch (profileError) {
+
           console.log(
             'LINE表示名取得エラー',
             profileError
@@ -86,7 +126,7 @@
 
 
         // ==========================================
-        // Apps Scriptへ認証情報を送信
+        // Apps Scriptへ認証情報送信
         // ==========================================
         const response =
           await fetch(
@@ -118,22 +158,23 @@
           !result.success ||
           !result.lineUserId
         ) {
-          document
-            .getElementById('message')
-            .innerText =
-              'LINE連携に失敗しました。';
+
+          messageElement.innerText =
+            'LINE連携に失敗しました。';
 
           return;
         }
 
 
         // ==========================================
-        // GoogleフォームURL
+        // Googleフォーム振り分け
         // ==========================================
         let formUrl;
 
 
-        // 売却相談
+        // ------------------------------------------
+        // 売却査定・相談
+        // ------------------------------------------
         if (type === 'sale') {
 
           formUrl =
@@ -143,7 +184,9 @@
             );
 
 
-        // 物件相談
+        // ------------------------------------------
+        // 土地・物件探し
+        // ------------------------------------------
         } else if (
           type === 'property'
         ) {
@@ -155,7 +198,9 @@
             );
 
 
+        // ------------------------------------------
         // 住宅メーカー診断
+        // ------------------------------------------
         } else {
 
           formUrl =
@@ -176,13 +221,19 @@
       } catch (error) {
 
         document
-          .getElementById('message')
+          .getElementById(
+            'message'
+          )
           .innerText =
             'エラー：' +
             (
               error.message ||
               error
             );
+
+        console.error(
+          error
+        );
       }
     }
 
