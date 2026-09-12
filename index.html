@@ -25,9 +25,6 @@
     async function startApp() {
       try {
 
-        // ==========================================
-        // URLパラメータ取得
-        // ==========================================
         const params =
           new URLSearchParams(
             window.location.search
@@ -36,10 +33,6 @@
         const type =
           params.get('type');
 
-
-        // ==========================================
-        // 表示メッセージ切り替え
-        // ==========================================
         const messageElement =
           document.getElementById(
             'message'
@@ -50,12 +43,15 @@
           messageElement.innerText =
             'Lista 不動産売却相談を準備しています...';
 
-        } else if (
-          type === 'property'
-        ) {
+        } else if (type === 'property') {
 
           messageElement.innerText =
             'Lista 土地・物件探し相談を準備しています...';
+
+        } else if (type === 'vacant') {
+
+          messageElement.innerText =
+            'Lista 相続・空き家相談を準備しています...';
 
         } else {
 
@@ -64,19 +60,12 @@
         }
 
 
-        // ==========================================
-        // LIFF初期化
-        // ==========================================
         await liff.init({
           liffId:
             '2011116571-MIJ3JTGp'
         });
 
 
-        // ==========================================
-        // LINEログイン
-        // 初回ログイン後も type=sale 等を保持
-        // ==========================================
         if (!liff.isLoggedIn()) {
 
           liff.login({
@@ -88,9 +77,6 @@
         }
 
 
-        // ==========================================
-        // IDトークン取得
-        // ==========================================
         const idToken =
           liff.getIDToken();
 
@@ -103,9 +89,6 @@
         }
 
 
-        // ==========================================
-        // LINEプロフィール取得
-        // ==========================================
         let displayName = '';
 
         try {
@@ -125,9 +108,6 @@
         }
 
 
-        // ==========================================
-        // Apps Scriptへ認証情報送信
-        // ==========================================
         const response =
           await fetch(
             'https://script.google.com/macros/s/AKfycbwCabSaORi7UCrhi7BtMD0a_rX_mFlLl0F7MrCC7broEI_G5PgoT4ieRrfFJHaAoZkUxQ/exec',
@@ -151,9 +131,6 @@
           await response.json();
 
 
-        // ==========================================
-        // LINE連携確認
-        // ==========================================
         if (
           !result.success ||
           !result.lineUserId
@@ -166,15 +143,9 @@
         }
 
 
-        // ==========================================
-        // Googleフォーム振り分け
-        // ==========================================
         let formUrl;
 
 
-        // ------------------------------------------
-        // 売却査定・相談
-        // ------------------------------------------
         if (type === 'sale') {
 
           formUrl =
@@ -184,12 +155,7 @@
             );
 
 
-        // ------------------------------------------
-        // 土地・物件探し
-        // ------------------------------------------
-        } else if (
-          type === 'property'
-        ) {
+        } else if (type === 'property') {
 
           formUrl =
             'https://docs.google.com/forms/d/e/1FAIpQLScmwZhI2qH7f-ZgxPb0a7g7gZuVE9C6Uu7YJhXTXt7R0P_m3Q/viewform?usp=pp_url&entry.997299105=' +
@@ -198,9 +164,15 @@
             );
 
 
-        // ------------------------------------------
-        // 住宅メーカー診断
-        // ------------------------------------------
+        } else if (type === 'vacant') {
+
+          formUrl =
+            'https://docs.google.com/forms/d/e/1FAIpQLSfRFDVYvMNVFPUP9BTzhhpx5_qlw0ZHTBzbdOIrkdpiaGcXAw/viewform?usp=pp_url&entry.2125231539=' +
+            encodeURIComponent(
+              result.lineUserId
+            );
+
+
         } else {
 
           formUrl =
@@ -211,9 +183,6 @@
         }
 
 
-        // ==========================================
-        // Googleフォームへ移動
-        // ==========================================
         window.location.href =
           formUrl;
 
