@@ -8,9 +8,10 @@
 </head>
 
 <body>
-  <div id="message" style="text-align:center;margin-top:60px;font-family:sans-serif;">
-    Lista 住まい相談を準備しています...
-  </div>
+<div id="message"
+     style="text-align:center;margin-top:60px;font-family:sans-serif;">
+  Lista 住まい相談を準備しています...
+</div>
 
 <script>
 const LIFF_ID = '2011116571-MIJ3JTGp';
@@ -42,109 +43,125 @@ const FORMS = {
 };
 
 
-function validType(value) {
-  return ['maker', 'sale', 'property', 'vacant'].includes(value)
-    ? value
-    : '';
-}
+function getType() {
+
+  // ① #maker などを最優先
+  const hash =
+    window.location.hash
+      .replace(/^#/, '')
+      .trim();
+
+  if (FORMS[hash]) {
+    return hash;
+  }
 
 
-function readTypeFromUrl() {
-  const params = new URLSearchParams(window.location.search);
+  // ② 従来の ?type= にも対応
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
 
-  const directType = validType(params.get('type'));
-  if (directType) return directType;
+  const queryType =
+    params.get('type');
 
-  const state = params.get('liff.state');
+  if (FORMS[queryType]) {
+    return queryType;
+  }
+
+
+  // ③ LINEの liff.state に残っている場合にも対応
+  const state =
+    params.get('liff.state');
 
   if (state) {
+
+    let decoded = state;
+
     try {
-      let decoded = state;
+      decoded =
+        decodeURIComponent(decoded);
+    } catch (e) {}
 
-      for (let i = 0; i < 3; i++) {
-        decoded = decodeURIComponent(decoded);
-      }
 
-      const question = decoded.indexOf('?');
+    const hashMatch =
+      decoded.match(
+        /#(maker|sale|property|vacant)/
+      );
 
-      const query =
-        question >= 0
-          ? decoded.substring(question + 1)
-          : decoded.replace(/^[/?#]+/, '');
+    if (hashMatch) {
+      return hashMatch[1];
+    }
 
-      const stateParams = new URLSearchParams(query);
 
-      const stateType = validType(stateParams.get('type'));
+    const queryMatch =
+      decoded.match(
+        /[?&]type=(maker|sale|property|vacant)/
+      );
 
-      if (stateType) return stateType;
-
-    } catch (e) {
-      console.log(e);
+    if (queryMatch) {
+      return queryMatch[1];
     }
   }
+
 
   return '';
 }
 
 
 async function start() {
-  const message = document.getElementById('message');
+
+  const message =
+    document.getElementById('message');
 
   try {
 
-    // LINEの1次リダイレクト時にも相談種別を保持
-    const initialType = readTypeFromUrl();
-
-    if (initialType) {
-      sessionStorage.setItem('lista_consultation_type', initialType);
-    }
-
-
-    // LIFF初期化
     await liff.init({
       liffId: LIFF_ID
     });
 
 
-    // LINEログイン
     if (!liff.isLoggedIn()) {
       liff.login();
       return;
     }
 
 
-    // LIFF初期化後のURLを優先
-    const restoredType = readTypeFromUrl();
+    const type =
+      getType();
 
-    const storedType = validType(
-      sessionStorage.getItem('lista_consultation_type')
-    );
-
-    const type = restoredType || storedType;
 
     if (!type || !FORMS[type]) {
-      message.innerText = 'リンク情報を確認できませんでした。';
+      message.innerText =
+        'リンク情報を確認できませんでした。';
       return;
     }
 
 
-    const config = FORMS[type];
+    const config =
+      FORMS[type];
 
-    message.innerText = config.message;
+    message.innerText =
+      config.message;
 
 
-    // LINEユーザーID取得
-    const profile = await liff.getProfile();
+    const profile =
+      await liff.getProfile();
 
-    const lineUserId = String(profile.userId || '').trim();
+
+    const lineUserId =
+      String(
+        profile.userId || ''
+      ).trim();
+
 
     if (!lineUserId) {
-      message.innerText = 'LINEユーザー情報を取得できませんでした。';
+      message.innerText =
+        'LINEユーザー情報を取得できませんでした。';
       return;
     }
 
 
-    // GoogleフォームへLINEユーザーID付きで転送
     const formUrl =
       config.url +
       '?usp=pp_url&' +
@@ -153,22 +170,22 @@ async function start() {
       encodeURIComponent(lineUserId);
 
 
-    sessionStorage.removeItem('lista_consultation_type');
-
-    window.location.replace(formUrl);
+    window.location.replace(
+      formUrl
+    );
 
 
   } catch (error) {
+
     console.error(error);
 
     message.innerText =
-      'フォームを開けませんでした。画面を閉じて、もう一度お試しください。';
+      'フォームを開けませんでした。';
   }
 }
 
 
 start();
 </script>
-
 </body>
 </html>
